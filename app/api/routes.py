@@ -123,9 +123,29 @@ async def trigger_market_cycle(
     current_user: User = Depends(deps.get_current_active_superuser),
     service: TradingService = Depends(deps.get_trading_service)
 ) -> Any:
-    """Manually trigger a market cycle (async background task)."""
+    """Manually trigger a market cycle (UI Only - Auth Required)."""
     background_tasks.add_task(service.execute_market_cycle)
     return {"message": "Market cycle triggered in background"}
+
+@router.get("/market/cron")
+async def trigger_market_cron(
+    background_tasks: BackgroundTasks,
+    request: Request,
+    service: TradingService = Depends(deps.get_trading_service),
+    session: AsyncSession = Depends(deps.get_db)  # Ensure DB is woken up
+) -> Any:
+    """
+    Cron Job trigger. 
+    Vercel Cron automatically calls GET.
+    Secured by CRON_SECRET header verification.
+    """
+    # Checking query param is easier for simple cron services
+    key = request.query_params.get("key")
+    if key != settings.SECRET_KEY:
+         raise HTTPException(status_code=403, detail="Invalid Cron Key")
+
+    background_tasks.add_task(service.execute_market_cycle)
+    return {"message": "Cron execution started"}
 
 # --- User Profile Endpoints ---
 

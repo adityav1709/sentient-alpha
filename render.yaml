@@ -2,6 +2,7 @@ services:
   - type: web
     name: sentient-alpha
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -16,4 +17,5 @@ databases:
   - name: sentient-db
     databaseName: sentient_alpha
     user: sentient_user
+    plan: free
 

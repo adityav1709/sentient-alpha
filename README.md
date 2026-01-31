@@ -56,3 +56,28 @@ pip install -r requirements.txt
 # Run server
 uvicorn app.main:app --reload
 ```
+
+## 💸 Completely Free Deployment (No Credit Card)
+
+If you strictly want to avoid entering a credit card, us **Vercel** (App) + **Neon** (Database).
+
+### 1. Database (Neon)
+1. Go to [Neon.tech](https://neon.tech) and sign up with GitHub.
+2. Create a new project.
+3. Copy the **Connection String** from their dashboard.
+
+### 2. App (Vercel)
+1. Go to [Vercel](https://vercel.com) and sign up with GitHub.
+2. Click **Add New Project** -> Import your `sentient-alpha` repo.
+3. In **Environment Variables**:
+   - `DATABASE_URL`: Paste your Neon connection string. **IMPORTANT**: Append `?sslmode=require` if not present.
+   - `SECRET_KEY`: Random string.
+   - `GOOGLE_API_KEY`: Your Gemini key.
+   - `MARKET_DATA_PROVIDER`: `yfinance`.
+4. Click **Deploy**.
+
+### 3. Automation (Market Cycles)
+Since Vercel puts the app to sleep, we need an external trigger for the market cycles.
+1. I have added a specialized endpoint: `/api/v1/market/cron?key=YOUR_SECRET_KEY`.
+2. Use **GitHub Actions** or a free monitor like **UptimeRobot** to hit this URL every 10 minutes.
+   - URL: `https://your-vercel-app.vercel.app/api/v1/market/cron?key=YOUR_SECRET_KEY_HERE`

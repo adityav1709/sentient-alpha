@@ -1,69 +1,29 @@
-import yfinance as yf
-from typing import List, Dict, Any
 import asyncio
 import pandas as pd
 import numpy as np
 import logging
 from app.ports.market_data_port import MarketDataPort
 from app.core.exceptions import MarketDataError
+import httpx
+from typing import Dict, List, Any
 
 logger = logging.getLogger(__name__)
 
 class YahooFinanceAdapter(MarketDataPort):
+    """
+    Lightweight implementation using direct HTTP requests to Yahoo Finance API.
+    Replaces the heavy 'yfinance' library to save ~100MB+ in build size (no pandas/numpy).
+    """
+    BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=1d"
     
+    # Random User-Agent to prevent 403s
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
     async def get_current_price(self, ticker: str) -> float:
-        data = await self.get_ticker_details(ticker)
-        return data.get('price', 0.0)
-
-    async def get_current_prices(self, tickers: List[str]) -> Dict[str, float]:
-        rich_data = await self.get_rich_market_data(tickers)
-        return {t: d['price'] for t, d in rich_data.items()}
-
-    async def get_rich_market_data(self, tickers: List[str]) -> Dict[str, Dict[str, Any]]:
-        # Limit concurrency to avoid rate limits
-        sem = asyncio.Semaphore(5)
-        
-        async def fetch_rich_one(t):
-            async with sem:
-                try:
-                    loop = asyncio.get_running_loop()
-                    return await loop.run_in_executor(None, self._fetch_sync_rich, t)
-                except Exception as e:
-                    logger.error(f"Error fetching rich data for {t}: {e}")
-                    return t, {"price": 0.0, "error": str(e)}
-
-        tasks = [fetch_rich_one(t) for t in tickers]
-        results = await asyncio.gather(*tasks)
-        
-        return {t: data for t, data in results if data}
-
-    def _fetch_sync_rich(self, ticker: str) -> tuple:
+        """Fetch single ticker price."""
         try:
-            t_obj = yf.Ticker(ticker)
-            
-            # 1. Price
-            price = t_obj.fast_info.last_price
-            if not price: return ticker, {"price": 0.0}
-
-            # 2. History for Technicals (need at least 52 for SMA50 + buffer)
-            hist = t_obj.history(period="1y") 
-            if hist.empty:
-                 return ticker, {"price": round(price, 2)}
-            
-            # --- Technical Indicators ---
-            close = hist['Close']
-            volume = hist['Volume']
-            high = hist['High']
-            low = hist['Low']
-
-            # Daily Return
-            daily_ret = close.pct_change().iloc[-1] * 100
-
-            # SMA 50
-            sma_50 = close.rolling(window=50).mean().iloc[-1]
-            dist_sma50 = ((price - sma_50) / sma_50) * 100 if pd.notna(sma_50) else None
-
-            # EMA 12, 26
             ema_12 = close.ewm(span=12, adjust=False).mean()
             ema_26 = close.ewm(span=26, adjust=False).mean()
 
