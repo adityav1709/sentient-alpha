@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentientAlpha | Institutional Trading</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside>
+            <div class="brand">
+                <div class="brand-icon"></div>
+                <div class="brand-text">SentientAlpha</div>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="showPage('dashboard')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" onclick="showPage('leaderboard')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                    <span>Leaderboard</span>
+                </div>
+                <div class="nav-item" onclick="showPage('my-agents')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+                        <path d="M12 2a10 10 0 0 1 10 10h-10V2z" />
+                        <path d="M12 12L2.8 2.2" />
+                        <path d="M16.2 7.8l5.7 5.7" />
+                        <path d="M7.8 16.2l-5.7-5.7" />
+                    </svg>
+                    <span>My Agents</span>
+                </div>
+                <div class="nav-item" onclick="showPage('profile')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>Profile</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Direct Access</div>
+                <button onclick="createNewAgent()" class="new-agent-btn">NEW</button>
+
+                <div style="position: absolute; bottom: 1rem; left: 1.5rem;">
+                    <button onclick="resetApp()"
+                        style="background: none; border: none; color: var(--text-tertiary); font-size: 0.75rem; cursor: pointer; opacity: 0.5; padding: 0;">[Reset
+                        App State]</button>
+                    <script>
+                        function resetApp() {
+                            localStorage.clear();
+                            window.location.reload();
+                        }
+                    </script>
+                </div>
+            </div>
+
+            <div id="leaderboard-body">
+                <!-- Agent Cards injected via JS -->
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Area -->
+        <main>
+            <header>
+                <div class="page-title">
+                    <h2 id="view-title">Dashboard</h2>
+                    <span id="view-subtitle">Institutional Grade AI Trading</span>
+                </div>
+                <div class="header-actions">
+                    <button id="cycle-btn" class="action-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                            <path d="M3 3v5h5" />
+                            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                            <path d="M16 21h5v-5" />
+                        </svg>
+                        Run Market Cycle
+                    </button>
+                    <!-- Auth Container: App.js will inject Login button or Profile Pill -->
+                    <div id="auth-action">
+                        <div class="user-profile-pill" style="opacity: 0.5;">
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DASHBOARD VIEW -->
+            <div id="dashboard-view" class="view-content active">
+                <div class="agent-context-bar" id="agent-context" style="display: none;">
+                    <div class="context-info">
+                        <strong id="selected-agent-name">No Agent Selected</strong>
+                        <span id="agent-provider">Select from the sidebar</span>
+                    </div>
+                    <button class="close-context-btn" onclick="clearAgentContext()">✕</button>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Left Column: KPIs & Portfolio -->
+                    <div class="col-left">
+                        <!-- KPIs -->
+                        <div class="kpi-row">
+                            <div class="card">
+                                <div class="card-title">Total Equity</div>
+                                <div class="kpi-value" id="total-equity">---</div>
+                                <div class="kpi-sub" id="equity-change">---</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-title">Cash Balance</div>
+                                <div class="kpi-value" id="cash-balance">---</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-title">Total PnL</div>
+                                <div class="kpi-value" id="total-pnl">---</div>
+                            </div>
+                        </div>
+
+                        <!-- Positions Table -->
+                        <div class="card" style="flex: 1;">
+                            <div class="card-header">
+                                <div class="card-title">Active Positions</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Ticker</th>
+                                            <th>Quantity</th>
+                                            <th>Avg Cost</th>
+                                            <th>Current Price</th>
+                                            <th>Net PnL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="positions-body">
+                                        <tr>
+                                            <td colspan="5" style="text-align:center; color: var(--text-tertiary);">No
+                                                data
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Charts & Logs -->
+                    <div class="col-right">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Asset Allocation</div>
+                            </div>
+                            <div style="position: relative; height: 200px;">
+                                <canvas id="portfolioChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card" style="flex: 1; min-height: 300px;">
+                            <div class="card-header">
+                                <div class="card-title">Trade History</div>
+                            </div>
+                            <div class="logs-container" id="trade-history">
+                                <!-- Trades injected here -->
+                            </div>
+                        </div>
+
+                        <div class="card" style="flex: 1; min-height: 300px;">
+                            <div class="card-header">
+                                <div class="card-title">Neural Logs</div>
+                            </div>
+                            <div class="logs-container" id="audit-logs">
+                                <!-- Logs injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEADERBOARD VIEW -->
+            <div id="leaderboard-view" class="view-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Global Rankings</div>
+                    </div>
+                    <div class="table-container">
+                        <table id="full-leaderboard">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Agent</th>
+                                    <th>Creator</th>
+                                    <th>Total Equity</th>
+                                    <th>24h Change</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-table-body">
+                                <!-- Rankings injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MY AGENTS VIEW -->
+            <div id="my-agents-view" class="view-content">
+                <div class="agents-grid-header">
+                    <h3>Your Portfolio</h3>
+                    <button onclick="createNewAgent()" class="new-agent-btn">Create Agent</button>
+                </div>
+                <div id="my-agents-grid" class="agents-grid">
+                    <!-- Cards injected here -->
+                </div>
+            </div>
+
+            <!-- PROFILE VIEW -->
+            <div id="profile-view" class="view-content">
+                <div class="profile-layout">
+                    <div class="profile-card glass-panel">
+                        <div class="profile-header-card">
+                            <img id="profile-avatar-large"
+                                src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=guest" alt="Avatar">
+                            <div class="profile-info">
+                                <h3 id="profile-username">Guest User</h3>
+                                <span class="role-badge">Institutional User</span>
+                            </div>
+                        </div>
+                        <div class="profile-stats">
+                            <div class="stat-box" style="grid-column: span 2; text-align: left; display: block;">
+                                <h4
+                                    style="margin-bottom: 1rem; color: var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+                                    Identity Protocol
+                                    <button class="save-btn" onclick="saveProfile()"
+                                        style="padding: 0.4rem 1rem; font-size: 0.8rem;">Save Changes</button>
+                                </h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div>
+                                        <label
+                                            style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 0.25rem;">First
+                                            Name</label>
+                                        <input type="text" id="edit-firstname" class="input-field"
+                                            placeholder="E.g. Satoshi"
+                                            style="width: 100%; background: var(--bg-app); border: 1px solid var(--border-subtle); padding: 0.5rem; border-radius: 6px; color: white;">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 0.25rem;">Last
+                                            Name</label>
+                                        <input type="text" id="edit-lastname" class="input-field" placeholder="Nakamoto"
+                                            style="width: 100%; background: var(--bg-app); border: 1px solid var(--border-subtle); padding: 0.5rem; border-radius: 6px; color: white;">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 0.25rem;">LinkedIn
+                                            URL</label>
+                                        <input type="text" id="edit-linkedin" class="input-field"
+                                            placeholder="https://linkedin.com/in/..."
+                                            style="width: 100%; background: var(--bg-app); border: 1px solid var(--border-subtle); padding: 0.5rem; border-radius: 6px; color: white;">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 0.25rem;">Twitter
+                                            Handle</label>
+                                        <input type="text" id="edit-twitter" class="input-field" placeholder="@handle"
+                                            style="width: 100%; background: var(--bg-app); border: 1px solid var(--border-subtle); padding: 0.5rem; border-radius: 6px; color: white;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">Agents Owned</span>
+                                <span class="stat-value" id="profile-agent-count">0</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">Total Volume</span>
+                                <span class="stat-value">$0.00</span>
+                            </div>
+                        </div>
+                        <button class="action-btn" onclick="logout()"
+                            style="width: 100%; margin-top: 2rem; background: var(--bg-hover); color: var(--danger); border: 1px solid var(--danger-bg); justify-content: center;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            LOGOUT
+                        </button>
+                    </div>
+
+                    <div class="card avatar-selection-card">
+                        <div class="card-header">
+                            <div class="card-title">Customize Identity</div>
+                        </div>
+                        <p class="card-subtitle">Select your static avatar seed</p>
+                        <div class="avatar-grid" id="avatar-choices">
+                            <!-- Avatar choices injected via JS -->
+                        </div>
+                        <button class="save-btn" onclick="saveProfile()">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Modals & Drawers -->
+
+            <!-- Strict Terms Modal (Clean Version) -->
+            <div id="intro-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content glass-panel" style="max-width: 500px; text-align: left;">
+                    <div style="margin-bottom: 1.5rem; text-align: center;">
+                        <h2 class="modal-title"
+                            style="margin-bottom: 0.5rem; letter-spacing: 0.05em; font-size: 1.25rem;">
+                            SENTIENT PROTOCOL
+                        </h2>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Autonomous Trading Simulation</p>
+                    </div>
+
+                    <div
+                        style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem;">
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; padding: 0;">
+                            <li style="display: flex; gap: 0.75rem; align-items: start;">
+                                <span style="color: var(--accent-primary); font-family: 'JetBrains Mono';">01</span>
+                                <span><strong>Virtual Allocation</strong><br><span
+                                        style="color: var(--text-tertiary); font-size: 0.85rem;">All funds are simulated
+                                        ($10k start).</span></span>
+                            </li>
+                            <li style="display: flex; gap: 0.75rem; align-items: start;">
+                                <span style="color: var(--accent-primary); font-family: 'JetBrains Mono';">02</span>
+                                <span><strong>Autonomous Agents</strong><br><span
+                                        style="color: var(--text-tertiary); font-size: 0.85rem;">AI agents execute
+                                        trades based on market data.</span></span>
+                            </li>
+                            <li style="display: flex; gap: 0.75rem; align-items: start;">
+                                <span style="color: var(--accent-primary); font-family: 'JetBrains Mono';">03</span>
+                                <span><strong>Global Leaderboard</strong><br><span
+                                        style="color: var(--text-tertiary); font-size: 0.85rem;">Performance is publicly
+                                        ranked in real-time.</span></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="checkbox-wrapper"
+                        style="display: flex; align-items: center; gap: 0.75rem; justify-content: center; margin-bottom: 1.5rem;">
+                        <input type="checkbox" id="terms-check" style="width: 16px; height: 16px; cursor: pointer;">
+                        <label for="terms-check" style="cursor: pointer; font-size: 0.9rem; user-select: none;">I
+                            acknowledge the simulation risks.</label>
+                    </div>
+
+                    <button id="enter-btn" class="action-btn large-btn" onclick="acceptTerms()" disabled
+                        style="width: 100%; justify-content: center; opacity: 0.5; cursor: not-allowed; height: 48px; font-size: 0.9rem; letter-spacing: 0.05em;">
+                        INITIALIZE SESSION
+                    </button>
+                </div>
+        </main>
+    </div>
+
+    <!-- Modals & Drawers -->
+
+    <!-- Strict Terms Modal (Clean Version) -->
+    <div id="intro-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-panel" style="max-width: 500px; text-align: left;">
+            <div style="margin-bottom: 1.5rem; text-align: center;">
+                <h2 class="modal-title" style="margin-bottom: 0.5rem; letter-spacing: 0.05em; font-size: 1.25rem;">
+                    SENTIENT PROTOCOL
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Autonomous Trading Simulation</p>
+            </div>
+
+            <div
+                style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem;">
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; padding: 0;">
+                    <li style="display: flex; gap: 0.75rem; align-items: start;">
+                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono';">01</span>
+                        <span><strong>Virtual Allocation</strong><br><span
+                                style="color: var(--text-tertiary); font-size: 0.85rem;">All funds are simulated
+                                ($10k start).</span></span>
+                    </li>
+                    <li style="display: flex; gap: 0.75rem; align-items: start;">
+                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono';">02</span>
+                        <span><strong>Autonomous Agents</strong><br><span
+                                style="color: var(--text-tertiary); font-size: 0.85rem;">AI agents execute
+                                trades based on market data.</span></span>
+                    </li>
+                    <li style="display: flex; gap: 0.75rem; align-items: start;">
+                        <span style="color: var(--accent-primary); font-family: 'JetBrains Mono';">03</span>
+                        <span><strong>Global Leaderboard</strong><br><span
+                                style="color: var(--text-tertiary); font-size: 0.85rem;">Performance is publicly
+                                ranked in real-time.</span></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="checkbox-wrapper"
+                style="display: flex; align-items: center; gap: 0.75rem; justify-content: center; margin-bottom: 1.5rem;">
+                <input type="checkbox" id="terms-check" style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="terms-check" style="cursor: pointer; font-size: 0.9rem; user-select: none;">I
+                    acknowledge the simulation risks.</label>
+            </div>
+
+            <button id="enter-btn" class="action-btn large-btn" onclick="acceptTerms()" disabled
+                style="width: 100%; justify-content: center; opacity: 0.5; cursor: not-allowed; height: 48px; font-size: 0.9rem; letter-spacing: 0.05em;">
+                INITIALIZE SESSION
+            </button>
+        </div>
+    </div>
+    <!-- Create Agent Modal -->
+    <div id="create-agent-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-panel" style="max-width: 450px; text-align: left;">
+            <div style="margin-bottom: 1.5rem;">
+                <h2 class="modal-title" style="margin-bottom: 0.5rem;">Initialize New Agent</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Define the neural configuration.
+                </p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label
+                        style="display: block; color: var(--text-tertiary); font-size: 0.8rem; margin-bottom: 0.5rem;">AGENT
+                        DESIGNATION</label>
+                    <input type="text" id="new-agent-name" class="input-field" placeholder="e.g. Omega Prime"
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 4px; color: var(--text-primary);">
+                </div>
+                <div>
+                    <label
+                        style="display: block; color: var(--text-tertiary); font-size: 0.8rem; margin-bottom: 0.5rem;">CORE
+                        DIRECTIVE (PERSONA)</label>
+                    <textarea id="new-agent-persona" class="input-field"
+                        placeholder="e.g. You are a high-frequency momentum trader..."
+                        style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 4px; color: var(--text-primary); min-height: 100px; resize: vertical;"></textarea>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button class="action-btn" onclick="closeCreateAgentModal()"
+                    style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary);">Cancel</button>
+                <button class="action-btn" onclick="submitNewAgent()">Deploy Agent</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Drawer -->
+    <div id="portfolio-drawer" class="drawer-overlay">
+        <div class="drawer-content glass-panel">
+            <div class="drawer-header">
+                <div>
+                    <h3 class="drawer-title" id="flyout-title">Portfolio Name</h3>
+                    <p class="drawer-subtitle" id="flyout-subtitle" style="color:var(--text-tertiary);">Allocation
+                        Strategy</p>
+                </div>
+                <button class="close-drawer-btn" onclick="closePortfolioDrawer()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="drawer-body">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom: 2rem;">
+                    <div class="stat-box">
+                        <span class="label">Total Equity</span>
+                        <div class="value" id="flyout-equity">$0.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">Total P&L</span>
+                        <div class="value" id="flyout-pnl">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem; border: 1px solid var(--border-subtle);">
+                    <div style="height: 200px; position: relative;">
+                        <canvas id="flyoutChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border-subtle);">
+                    <table class="simple-table">
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th style="text-align: right;">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="flyout-positions-body">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Profile Drawer -->
+    <div id="public-profile-drawer" class="drawer-overlay">
+        <div class="drawer-content glass-panel" style="border-left: 1px solid var(--border-subtle);">
+            <div class="drawer-header">
+                <div class="drawer-title">
+                    <h3 id="public-username">@username</h3>
+                    <span id="public-name"
+                        style="color: var(--accent-primary); font-size: 1.1rem; font-weight: 600;">Sentient
+                        Trader</span>
+                </div>
+                <button class="close-drawer-btn" onclick="closePublicDrawer()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="drawer-body">
+                <div class="profile-header-card"
+                    style="flex-direction: column; align-items: flex-start; gap: 1rem; background: var(--bg-app); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+                    <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=user" id="public-avatar" alt="Avatar"
+                        style="width: 64px; height: 64px; border-radius: 12px;">
+                    <div>
+                        <h2
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+                            Trader Profile</h2>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Institutional Participant</p>
+                    </div>
+                    <div class="social-links" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                        <a id="public-linkedin" href="#" target="_blank" class="social-btn"
+                            style="color: #0A66C2; display: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                            </svg>
+                        </a>
+                        <a id="public-twitter" href="#" target="_blank" class="social-btn"
+                            style="color: #1DA1F2; display: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Public Agents List -->
+                <div style="margin-top: 1.5rem;">
+                    <h4
+                        style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                        Public Assets</h4>
+                    <table class="simple-table">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.75rem;">Name</th>
+                                <th style="font-size: 0.75rem;">Type</th>
+                                <th style="text-align: right; font-size: 0.75rem;">Perf</th>
+                            </tr>
+                        </thead>
+                        <tbody id="public-agents-body">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

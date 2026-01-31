@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  sentient_alpha:
+    build: .
+    container_name: sentient_alpha
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./app/sentient_alpha.db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
