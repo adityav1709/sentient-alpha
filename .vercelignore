@@ -1,0 +1,14 @@
+
+# Vercel Ignore
+.venv
+venv
+.git
+*.db
+*.sqlite3
+__pycache__
+*.pyc
+.env
+.DS_Store
+validate_user.py
+docker-compose.yml
+render.yaml
