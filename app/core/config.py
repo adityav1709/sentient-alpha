@@ -34,6 +34,16 @@ class Settings(BaseSettings):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("sqlite://"):
             url = url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+        
+        # Strip sslmode if present, asyncpg doesn't like it in the URL
+        if "sslmode=" in url:
+            from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+            u = urlparse(url)
+            query = parse_qs(u.query)
+            query.pop('sslmode', None)
+            u = u._replace(query=urlencode(query, doseq=True))
+            url = urlunparse(u)
+            
         return url
     
     class Config:
