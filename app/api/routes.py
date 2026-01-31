@@ -1,11 +1,12 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from uuid import UUID
 
 from app.api import deps
+from app.core.config import settings
 from app.domain.schemas import AgentCreate, AgentRead, AgentDetail, UserRead, UserUpdate
 from app.repositories.agent_repository import AgentRepository
 from app.repositories.portfolio_repository import PortfolioRepository
