@@ -11,5 +11,5 @@ python-dotenv>=1.0.1
 aiofiles>=23.2.1
 passlib[argon2]>=1.7.4
 python-jose[cryptography]>=3.3.0
-multipart>=0.0.5
+python-multipart>=0.0.5
 asyncpg>=0.29.0
