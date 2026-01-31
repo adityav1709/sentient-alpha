@@ -1,6 +1,5 @@
 import asyncio
-import pandas as pd
-import numpy as np
+
 import logging
 from app.ports.market_data_port import MarketDataPort
 from app.core.exceptions import MarketDataError
