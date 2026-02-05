@@ -23,13 +23,13 @@ class SchedulerService:
         logger.info(f"Starting Scheduler with timezone {settings.SCHEDULER_TIMEZONE}...")
         
         # Market Cycle: Runs Monday-Friday during NASDAQ hours (9:30 AM - 4:00 PM ET)
-        # Every 10 minutes (0, 10, 20, 30, 40, 50)
+        # Every 30 minutes (0, 30)
         self.scheduler.add_job(
             self.run_market_cycle, 
             'cron',
             day_of_week='mon-fri',
             hour='9-16',
-            minute='*/10',
+            minute='*/30',
             timezone=settings.SCHEDULER_TIMEZONE,
             id='market_cycle',
             replace_existing=True,
