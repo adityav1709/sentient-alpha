@@ -23,6 +23,8 @@ class Settings(BaseSettings):
 
     # Scheduling
     SCHEDULER_INTERVAL_SECONDS: int = 600
+    PRICE_UPDATE_INTERVAL_SECONDS: int = 600
+    SCHEDULER_TIMEZONE: str = "America/New_York"
 
     @property
     def ASYNC_DATABASE_URL(self) -> str:

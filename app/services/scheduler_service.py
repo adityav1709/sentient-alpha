@@ -20,22 +20,28 @@ class SchedulerService:
         self.market_data_client = YahooFinanceAdapter()
 
     async def start(self):
-        logger.info("Starting Scheduler...")
+        logger.info(f"Starting Scheduler with timezone {settings.SCHEDULER_TIMEZONE}...")
+        
+        # Market Cycle: Runs Monday-Friday during NASDAQ hours (9:30 AM - 4:00 PM ET)
+        # Every 10 minutes (0, 10, 20, 30, 40, 50)
         self.scheduler.add_job(
             self.run_market_cycle, 
-            'interval', 
-            seconds=settings.SCHEDULER_INTERVAL_SECONDS,
+            'cron',
+            day_of_week='mon-fri',
+            hour='9-16',
+            minute='*/10',
+            timezone=settings.SCHEDULER_TIMEZONE,
             id='market_cycle',
             replace_existing=True,
-            coalesce=True, # Combine missed jobs
-            max_instances=3 # Allow overlap if needed
+            coalesce=True,
+            max_instances=3
         )
         
-        # Add High-Frequency Price Update Job (Every 1 min)
+        # High-Frequency Price Update Job (Every 10 min by default now)
         self.scheduler.add_job(
             self.run_price_update,
             'interval',
-            seconds=60,
+            seconds=settings.PRICE_UPDATE_INTERVAL_SECONDS,
             id='price_update',
             replace_existing=True,
             coalesce=True
